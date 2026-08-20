@@ -1,590 +1,534 @@
-/**
- * COIFE SPECIALTY COFFEE - INTERACTIVE APP LOGIC
- * WhatsApp Number: 01018923524 (+201018923524)
- * Pure Vanilla JavaScript - 100% Reliable & Fast
+﻿/**
+ * مكتبة تعلّم - Ta'allam Modern Frontend Bookstore
+ * الملف البرمجي الرئيسي لإدارة التفاعل والواجهة
  */
 
-// Global Configuration
-const CONFIG = {
-  WHATSAPP_NUMBER: '201018923524',
-  CURRENCY: 'ج.م',
-  STORE_NAME: 'كافيه كويفي - Coife Specialty Coffee'
+// حالة التطبيق العامة
+const AppState = {
+  selectedCategory: "all",
+  searchQuery: "",
+  maxPrice: 450,
+  minPrice: 100,
+  sortBy: "popular",
+  currentTheme: localStorage.getItem("taalam_theme") || "dark"
 };
 
-// Menu Items Database
-const MENU_ITEMS = [
-  // Hot Coffee
-  {
-    id: 'hot-1',
-    name: 'فلات وايت مختص',
-    nameEn: 'Specialty Flat White',
-    category: 'hot',
-    price: 65,
-    tag: 'الأكثر طلباً',
-    image: 'images/hero_coffee.jpg',
-    desc: 'إسبريسو دبل شوت مستخلص بحرفية مع حليب مخملي مبخر ناعم ونوتات شوكولاتة.',
-    flavorNotes: ['بندق محمص', 'شوكولاتة داكنة', 'قوام كريمي']
-  },
-  {
-    id: 'hot-2',
-    name: 'إسبريسو دبل شوت كولومبي',
-    nameEn: 'Double Espresso Colombia',
-    category: 'hot',
-    price: 45,
-    tag: 'محصول سنجل أورجن',
-    image: 'images/espresso_shot.jpg',
-    desc: 'مستخلص بضغط مثالي مع كريما ذهبية غنية، إيحاءات فاكهية ولمسة كراميل متوازنة.',
-    flavorNotes: ['كريما ذهبية', 'كراميل', 'حموضة متوازنة']
-  },
-  {
-    id: 'hot-3',
-    name: 'قهوة V60 مقطرة يدوياً',
-    nameEn: 'V60 Hand Drip Coffee',
-    category: 'specialty',
-    price: 75,
-    tag: 'تحضير يدوي',
-    image: 'images/pourover_v60.jpg',
-    desc: 'استخلاص بطيء لأفخر حبوب البن الإثيوبي اليرغاشيفي لنقاء نكهة لا مثيل له.',
-    flavorNotes: ['زهري', 'ياسمين', 'توت بري']
-  },
-  {
-    id: 'hot-4',
-    name: 'كورتادو كويفي الخاص',
-    nameEn: 'Coife Signature Cortado',
-    category: 'hot',
-    price: 60,
-    tag: 'توازن مثالي',
-    image: 'images/hero_coffee.jpg',
-    desc: 'نسبة متساوية 1:1 من الإسبريسو المركز والحليب المبخر لعشاق القهوة الصريحة.',
-    flavorNotes: ['قوة النكهة', 'حليب دافئ', 'نكهة مركزة']
-  },
-  {
-    id: 'hot-5',
-    name: 'قهوة تركي مخصوص بالهيل والزعفران',
-    nameEn: 'Special Turkish Coffee',
-    category: 'hot',
-    price: 40,
-    tag: 'بن كويفي المطحون',
-    image: 'images/coffee_beans.jpg',
-    desc: 'بن محوج بخلطتنا الخاصة مع الهيل والزعفران مع وش ثقيل ورغوة مميزة.',
-    flavorNotes: ['هيل فاخر', 'زعفران', 'وش غني']
-  },
+// مدير التوست الإشعارات
+window.showToast = function(message, type = "success") {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
+
+  const iconMap = {
+    success: "fa-solid fa-circle-check text-emerald-400",
+    error: "fa-solid fa-circle-xmark text-rose-500",
+    info: "fa-solid fa-circle-info text-indigo-400",
+    warning: "fa-solid fa-triangle-exclamation text-amber-400"
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `toast-message ${type}`;
+  toast.innerHTML = `
+    <i class="${iconMap[type] || iconMap.info}"></i>
+    <span>${message}</span>
+  `;
 
-  // Iced & Cold Coffee
-  {
-    id: 'cold-1',
-    name: 'سبانش لاتيه مثلج مكرمل',
-    nameEn: 'Iced Spanish Caramel Latte',
-    category: 'cold',
-    price: 75,
-    tag: 'الأكثر مبيعاً ❄️',
-    image: 'images/iced_latte.jpg',
-    desc: 'إسبريسو مثلج مع صوص الحليب المكثف المحضر منزلياً وصوص الكراميل والثلج الصافي.',
-    flavorNotes: ['كراميل سائل', 'حلاوة معتدلة', 'منعش جداً']
-  },
-  {
-    id: 'cold-2',
-    name: 'كولد برو منقوع 24 ساعة',
-    nameEn: 'Artisan 24H Cold Brew',
-    category: 'cold',
-    price: 70,
-    tag: 'تخمير بارد',
-    image: 'images/iced_latte.jpg',
-    desc: 'مستخلص على البارد قطرة بقطرة لمدة 24 ساعة لنكهة ناعمة خالية من المرارة والحموضة.',
-    flavorNotes: ['شوكولاتة بيضاء', 'فانيليا', 'حموضة منخفضة']
-  },
-  {
-    id: 'cold-3',
-    name: 'آيس أمريكانو كلاسيك',
-    nameEn: 'Iced Americano Single Origin',
-    category: 'cold',
-    price: 50,
-    tag: 'منعش وقوي',
-    image: 'images/espresso_shot.jpg',
-    desc: 'دبل شوت إسبريسو مع ماء مثلج نقي لنقاء النكهة وانتعاش الصيف.',
-    flavorNotes: ['قوام خفيف', 'انتعاش', 'كافيين مركز']
-  },
-
-  // Bakery & Desserts
-  {
-    id: 'dessert-1',
-    name: 'تشيز كيك سان سباستيان بالشوكولاتة',
-    nameEn: 'San Sebastian Basque Cheesecake',
-    category: 'dessert',
-    price: 85,
-    tag: 'طازج يومياً',
-    image: 'images/cheesecake_croissant.jpg',
-    desc: 'كعكة الجبن الإسبانية المحروقة بقوام ذائب كالحرير مع صوص الشوكولاتة البلجيكية الدافئة.',
-    flavorNotes: ['شوكولاتة بلجيكية', 'قوام كريمي', 'مخبوز طازج']
-  },
-  {
-    id: 'dessert-2',
-    name: 'كرواسون زبدة فرنسي محشي باللوز',
-    nameEn: 'French Almond Croissant',
-    category: 'dessert',
-    price: 65,
-    tag: 'زبدة نقية 100%',
-    image: 'images/cheesecake_croissant.jpg',
-    desc: 'طبقات هشة ومقرمشة من الكرواسون الفرنسي الفاخر محشوة بكريمة اللوز ورقائق اللوز المحمص.',
-    flavorNotes: ['زبدة طبيعية', 'لوز محمص', 'قرمشة خفيفة']
-  },
-  {
-    id: 'dessert-3',
-    name: 'كوكيز الشوكولاتة الذائبة والملح البحري',
-    nameEn: 'Fudge Sea Salt Cookie',
-    category: 'dessert',
-    price: 45,
-    tag: 'يقدم دافئاً',
-    image: 'images/cheesecake_croissant.jpg',
-    desc: 'كوكيز محشو بقطع شوكولاتة داكنة ذائبة ومرشوش بحبيبات ملح البحر الخشن الفاخر.',
-    flavorNotes: ['شوكولاتة بلجيكية', 'ملح بحري', 'طري من الداخل']
-  },
-
-  // Coffee Beans for Home
-  {
-    id: 'beans-1',
-    name: 'كيس بن إثيوبي يرغاشيفي (250 جم)',
-    nameEn: 'Ethiopia Yirgacheffe Beans (250g)',
-    category: 'beans',
-    price: 220,
-    tag: 'محصول مختص',
-    image: 'images/coffee_beans.jpg',
-    desc: 'حبوب كاملة أو مطحونة حسب رغبتك، معالجة مجففة بنوتات الأزهار والفاكهة الاستوائية.',
-    flavorNotes: ['إيحاء زهري', 'فاكهة استوائية', 'تحميص أسبوعي']
-  },
-  {
-    id: 'beans-2',
-    name: 'كيس بن كولومبيا هويلا سوبريمو (250 جم)',
-    nameEn: 'Colombia Huila Supremo (250g)',
-    category: 'beans',
-    price: 195,
-    tag: 'حبوب فاخرة',
-    image: 'images/coffee_beans.jpg',
-    desc: 'مناسب لجميع أجهزة الإسبريسو والفلتر، قوام غني ونكهات شوكولاتة وكراميل متناغمة.',
-    flavorNotes: ['شوكولاتة بالحليب', 'بندق', 'قوام ممتلئ']
-  }
-];
-
-// Shopping Cart State
-let cart = [];
-
-// DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
-  initHeader();
-  initTheme();
-  renderMenu('all');
-  initCategoryFilters();
-  initSearch();
-  initCart();
-  initReservationForm();
-  initFloatingWhatsApp();
-});
-
-/* ==========================================================================
-   HEADER & NAVIGATION
-   ========================================================================== */
-function initHeader() {
-  const header = document.querySelector('.site-header');
-  const mobileBtn = document.querySelector('.mobile-menu-btn');
-  const navLinks = document.querySelector('.nav-links');
-  const navItems = document.querySelectorAll('.nav-link');
-
-  // Sticky header shadow
-  window.addEventListener('scroll', () => {
-    if (window.scrollY > 30) {
-      header?.classList.add('scrolled');
-    } else {
-      header?.classList.remove('scrolled');
-    }
-  });
-
-  // Mobile menu toggle
-  mobileBtn?.addEventListener('click', () => {
-    navLinks?.classList.toggle('active');
-    const isOpen = navLinks?.classList.contains('active');
-    mobileBtn.innerHTML = isOpen ? '✕' : '☰';
-  });
-
-  // Close menu on link click
-  navItems.forEach(link => {
-    link.addEventListener('click', () => {
-      navLinks?.classList.remove('active');
-      if (mobileBtn) mobileBtn.innerHTML = '☰';
-      
-      navItems.forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
-    });
-  });
-}
-
-/* ==========================================================================
-   THEME TOGGLE (DARK ESPRESSO / WARM LATTE)
-   ========================================================================== */
-function initTheme() {
-  const themeBtn = document.getElementById('theme-toggle');
-  const savedTheme = localStorage.getItem('coife_theme');
-
-  if (savedTheme === 'dark') {
-    document.body.classList.add('dark-mode');
-    if (themeBtn) themeBtn.innerHTML = '☀️';
-  } else {
-    if (themeBtn) themeBtn.innerHTML = '🌙';
-  }
-
-  themeBtn?.addEventListener('click', () => {
-    document.body.classList.toggle('dark-mode');
-    const isDark = document.body.classList.contains('dark-mode');
-    localStorage.setItem('coife_theme', isDark ? 'dark' : 'light');
-    themeBtn.innerHTML = isDark ? '☀️' : '🌙';
-    showToast(isDark ? 'تم تفعيل مود القهوة المسائي ☕🌙' : 'تم تفعيل مود القهوة الصباحي ☀️☕');
-  });
-}
-
-/* ==========================================================================
-   MENU RENDERING & FILTERING
-   ========================================================================== */
-function renderMenu(category = 'all', searchQuery = '') {
-  const menuGrid = document.getElementById('menu-grid');
-  if (!menuGrid) return;
-
-  let filtered = MENU_ITEMS;
-
-  if (category !== 'all') {
-    filtered = filtered.filter(item => item.category === category);
-  }
-
-  if (searchQuery.trim() !== '') {
-    const q = searchQuery.toLowerCase().trim();
-    filtered = filtered.filter(item => 
-      item.name.toLowerCase().includes(q) || 
-      item.nameEn.toLowerCase().includes(q) || 
-      item.desc.toLowerCase().includes(q) ||
-      item.flavorNotes.some(f => f.toLowerCase().includes(q))
-    );
-  }
-
-  if (filtered.length === 0) {
-    menuGrid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 60px 20px;">
-        <div style="font-size: 3rem; margin-bottom: 12px;">☕🔍</div>
-        <h3>لم نجد مشروبات مطابقة لبحثك</h3>
-        <p style="color: var(--text-muted); margin-top: 8px;">جرب البحث بكلمة أخرى أو اختر أحد التصنيفات أعلاه</p>
-      </div>
-    `;
-    return;
-  }
-
-  menuGrid.innerHTML = filtered.map(item => `
-    <article class="menu-card" data-id="${item.id}">
-      <div class="menu-card-img-wrap">
-        <img src="${item.image}" alt="${item.name}" loading="lazy" onerror="this.src='images/hero_coffee.jpg'">
-        ${item.tag ? `<span class="badge-tag">${item.tag}</span>` : ''}
-      </div>
-      <div class="menu-card-body">
-        <div class="menu-card-header">
-          <div>
-            <h3 class="menu-card-title">${item.name}</h3>
-            <span class="menu-card-en">${item.nameEn}</span>
-          </div>
-          <div class="menu-card-price">${item.price} ${CONFIG.CURRENCY}</div>
-        </div>
-        <p class="menu-card-desc">${item.desc}</p>
-        <div class="flavor-notes">
-          ${item.flavorNotes.map(n => `<span class="flavor-chip">✦ ${n}</span>`).join('')}
-        </div>
-        <div class="menu-card-actions">
-          <button class="btn-add-cart" onclick="addToCart('${item.id}')">
-            <span>🛒</span> أضف للسلة
-          </button>
-          <button class="btn-quick-wa" title="طلب فوري عبر واتساب" onclick="quickOrderWhatsApp('${item.id}')">
-            💬
-          </button>
-        </div>
-      </div>
-    </article>
-  `).join('');
-}
-
-function initCategoryFilters() {
-  const catButtons = document.querySelectorAll('.cat-btn');
-  catButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      catButtons.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const cat = btn.dataset.category || 'all';
-      const searchInput = document.getElementById('menu-search');
-      renderMenu(cat, searchInput?.value || '');
-    });
-  });
-}
-
-function initSearch() {
-  const searchInput = document.getElementById('menu-search');
-  searchInput?.addEventListener('input', (e) => {
-    const activeCatBtn = document.querySelector('.cat-btn.active');
-    const currentCat = activeCatBtn?.dataset.category || 'all';
-    renderMenu(currentCat, e.target.value);
-  });
-}
-
-/* ==========================================================================
-   CART SYSTEM & WHATSAPP CHECKOUT
-   ========================================================================== */
-function initCart() {
-  const cartToggleBtn = document.getElementById('cart-toggle');
-  const cartDrawer = document.getElementById('cart-drawer');
-  const cartOverlay = document.getElementById('cart-overlay');
-  const cartCloseBtn = document.getElementById('cart-close');
-  const checkoutBtn = document.getElementById('cart-checkout-btn');
-
-  function openCart() {
-    cartDrawer?.classList.add('active');
-    cartOverlay?.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeCart() {
-    cartDrawer?.classList.remove('active');
-    cartOverlay?.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-
-  cartToggleBtn?.addEventListener('click', openCart);
-  cartCloseBtn?.addEventListener('click', closeCart);
-  cartOverlay?.addEventListener('click', closeCart);
-
-  checkoutBtn?.addEventListener('click', checkoutWhatsApp);
-}
-
-window.addToCart = function(itemId) {
-  const product = MENU_ITEMS.find(i => i.id === itemId);
-  if (!product) return;
-
-  const existing = cart.find(i => i.id === itemId);
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({ ...product, qty: 1 });
-  }
-
-  updateCartUI();
-  showToast(`تمت إضافة "${product.name}" إلى السلة ☕`);
-};
-
-window.updateCartQty = function(itemId, delta) {
-  const itemIndex = cart.findIndex(i => i.id === itemId);
-  if (itemIndex === -1) return;
-
-  cart[itemIndex].qty += delta;
-  if (cart[itemIndex].qty <= 0) {
-    cart.splice(itemIndex, 1);
-  }
-
-  updateCartUI();
-};
-
-window.removeCartItem = function(itemId) {
-  cart = cart.filter(i => i.id !== itemId);
-  updateCartUI();
-  showToast('تم حذف العنصر من السلة');
-};
-
-function updateCartUI() {
-  const badge = document.getElementById('cart-badge-count');
-  const itemsContainer = document.getElementById('cart-items-list');
-  const subtotalEl = document.getElementById('cart-subtotal');
-  const totalEl = document.getElementById('cart-total');
-  const checkoutBtn = document.getElementById('cart-checkout-btn');
-
-  const totalCount = cart.reduce((acc, item) => acc + item.qty, 0);
-  const totalPrice = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-  if (badge) {
-    badge.textContent = totalCount;
-    badge.style.display = totalCount > 0 ? 'flex' : 'none';
-  }
-
-  if (subtotalEl) subtotalEl.textContent = `${totalPrice} ${CONFIG.CURRENCY}`;
-  if (totalEl) totalEl.textContent = `${totalPrice} ${CONFIG.CURRENCY}`;
-
-  if (checkoutBtn) {
-    checkoutBtn.disabled = cart.length === 0;
-    checkoutBtn.style.opacity = cart.length === 0 ? '0.5' : '1';
-    checkoutBtn.style.cursor = cart.length === 0 ? 'not-allowed' : 'pointer';
-  }
-
-  if (!itemsContainer) return;
-
-  if (cart.length === 0) {
-    itemsContainer.innerHTML = `
-      <div class="cart-empty">
-        <div class="cart-empty-icon">☕🛒</div>
-        <h4>سلة الطلبات فارغة حالياً</h4>
-        <p>اختر مشروباتك وحلوياتك المفضلة من المنيو لإضافتها هنا</p>
-      </div>
-    `;
-    return;
-  }
-
-  itemsContainer.innerHTML = cart.map(item => `
-    <div class="cart-item">
-      <div class="cart-item-img">
-        <img src="${item.image}" alt="${item.name}" onerror="this.src='images/hero_coffee.jpg'">
-      </div>
-      <div class="cart-item-details">
-        <h4>${item.name}</h4>
-        <div class="cart-item-price">${item.price * item.qty} ${CONFIG.CURRENCY} (${item.price} للواحد)</div>
-        <div class="cart-item-qty">
-          <button class="qty-btn" onclick="updateCartQty('${item.id}', -1)">-</button>
-          <span style="font-weight: 700; padding: 0 4px;">${item.qty}</span>
-          <button class="qty-btn" onclick="updateCartQty('${item.id}', 1)">+</button>
-        </div>
-      </div>
-      <button class="cart-item-delete" title="حذف" onclick="removeCartItem('${item.id}')">🗑️</button>
-    </div>
-  `).join('');
-}
-
-// WhatsApp Direct Checkout for Entire Cart
-function checkoutWhatsApp() {
-  if (cart.length === 0) {
-    showToast('سلتك فارغة! أضف مشروبات أولاً.');
-    return;
-  }
-
-  const notesInput = document.getElementById('cart-customer-notes');
-  const customerNotes = notesInput ? notesInput.value.trim() : '';
-
-  const orderType = document.querySelector('input[name="order-type"]:checked')?.value || 'استلام من الفرع';
-
-  const totalPrice = cart.reduce((acc, item) => acc + (item.price * item.qty), 0);
-
-  let message = `*طلب جديد من موقع كافيه كويفي Coife* ☕✨\n`;
-  message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-  message += `*نوع الطلب:* ${orderType}\n\n`;
-  message += `*تفاصيل المشروبات والأصناف:*\n`;
-
-  cart.forEach((item, index) => {
-    message += `${index + 1}. *${item.name}* (الكمية: ${item.qty}) - السعر: ${item.price * item.qty} ${CONFIG.CURRENCY}\n`;
-  });
-
-  message += `\n*الإجمالي النهائي:* ${totalPrice} ${CONFIG.CURRENCY}\n`;
-
-  if (customerNotes) {
-    message += `*ملاحظات إضافية:* ${customerNotes}\n`;
-  }
-
-  message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-  message += `_أرجو تأكيد استلام الطلب وتجهيزه. شكراً لكم!_`;
-
-  const encodedUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-  window.open(encodedUrl, '_blank');
-}
-
-// 1-Click Quick WhatsApp Order for Single Item
-window.quickOrderWhatsApp = function(itemId) {
-  const item = MENU_ITEMS.find(i => i.id === itemId);
-  if (!item) return;
-
-  let message = `مرحباً كافيه كويفي ☕✨\n`;
-  message += `أود طلب صنف محدد من المنيو:\n\n`;
-  message += `*المشروب/الصنف:* ${item.name} (${item.nameEn})\n`;
-  message += `*السعر:* ${item.price} ${CONFIG.CURRENCY}\n\n`;
-  message += `يرجى تأكيد التوافر وطريقة الاستلام أو التوصيل.`;
-
-  const encodedUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-  window.open(encodedUrl, '_blank');
-};
-
-/* ==========================================================================
-   RESERVATION FORM VIA WHATSAPP
-   ========================================================================== */
-function initReservationForm() {
-  const resForm = document.getElementById('reservation-form');
-  if (!resForm) return;
-
-  resForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById('res-name')?.value.trim();
-    const phone = document.getElementById('res-phone')?.value.trim();
-    const date = document.getElementById('res-date')?.value;
-    const time = document.getElementById('res-time')?.value;
-    const guests = document.getElementById('res-guests')?.value;
-    const area = document.getElementById('res-area')?.value;
-    const notes = document.getElementById('res-notes')?.value.trim();
-
-    if (!name || !phone || !date || !time) {
-      showToast('يرجى ملء كافة الحقول الأساسية للحجز');
-      return;
-    }
-
-    let message = `*طلب حجز طاولة / ركن عمل - كافيه كويفي* ☕📅\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `*الاسم:* ${name}\n`;
-    message += `*رقم الهاتف:* ${phone}\n`;
-    message += `*التاريخ:* ${date}\n`;
-    message += `*الوقت:* ${time}\n`;
-    message += `*عدد الأفراد:* ${guests}\n`;
-    message += `*منطقة الجلوس المفضلة:* ${area}\n`;
-    if (notes) {
-      message += `*ملاحظات خاصة:* ${notes}\n`;
-    }
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `_أرجو تأكيد حجز الطاولة وإبلاغي بالموافقة. شكراً لكم!_`;
-
-    const encodedUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(encodedUrl, '_blank');
-    showToast('جاري فتح واتساب لتأكيد الحجز... 📅☕');
-  });
-}
-
-/* ==========================================================================
-   FLOATING WHATSAPP BUTTON & CHAT POPUP
-   ========================================================================== */
-function initFloatingWhatsApp() {
-  const floatBtn = document.getElementById('floating-wa-btn');
-  const chatBubble = document.getElementById('wa-chat-bubble');
-
-  floatBtn?.addEventListener('click', () => {
-    let message = `مرحباً كافيه كويفي 👋☕ أود الاستفسار عن المنيو والخدمات المتاحة لديكم اليوم.`;
-    const encodedUrl = `https://wa.me/${CONFIG.WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(encodedUrl, '_blank');
-  });
-
-  // Auto hide bubble after 10 seconds or clicking it
-  chatBubble?.addEventListener('click', () => {
-    chatBubble.style.display = 'none';
-  });
-
-  setTimeout(() => {
-    if (chatBubble) {
-      chatBubble.style.opacity = '0.9';
-    }
-  }, 10000);
-}
-
-/* ==========================================================================
-   TOAST NOTIFICATION UTILITY
-   ========================================================================== */
-function showToast(message) {
-  let container = document.getElementById('toast-container');
-  if (!container) {
-    container = document.createElement('div');
-    container.id = 'toast-container';
-    container.className = 'toast-container';
-    document.body.appendChild(container);
-  }
-
-  const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.innerHTML = `<span>☕</span> <span>${message}</span>`;
   container.appendChild(toast);
 
   setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    toast.style.transition = 'all 0.3s ease';
-    setTimeout(() => toast.remove(), 300);
-  }, 3200);
+    toast.classList.add("hide");
+    setTimeout(() => toast.remove(), 350);
+  }, 3500);
+};
+
+// تهيئة الوضع الليلي والنهاري
+function initTheme() {
+  const themeToggleBtn = document.getElementById("theme-toggle-btn");
+  const body = document.body;
+
+  if (AppState.currentTheme === "light") {
+    body.classList.add("light-theme");
+    if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i>';
+  } else {
+    body.classList.remove("light-theme");
+    if (themeToggleBtn) themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i>';
+  }
+
+  if (themeToggleBtn) {
+    themeToggleBtn.addEventListener("click", () => {
+      const isLight = body.classList.toggle("light-theme");
+      AppState.currentTheme = isLight ? "light" : "dark";
+      localStorage.setItem("taalam_theme", AppState.currentTheme);
+      themeToggleBtn.innerHTML = isLight ? '<i class="fa-solid fa-moon"></i>' : '<i class="fa-solid fa-sun"></i>';
+      window.showToast(isLight ? "تم تفعيل الوضع النهاري ☀️" : "تم تفعيل الوضع الليلي 🌙", "info");
+    });
+  }
 }
+
+// رسم شريط التصنيفات السريع
+function renderCategoryPills() {
+  const container = document.getElementById("categories-pills-container");
+  if (!container) return;
+
+  container.innerHTML = CATEGORIES_DATA.map(cat => `
+    <button type="button" 
+            class="category-pill-btn ${AppState.selectedCategory === cat.id ? 'active' : ''}" 
+            data-category="${cat.id}">
+      <i class="${cat.icon}"></i>
+      <span>${cat.name}</span>
+      <span class="cat-pill-count">${cat.count}</span>
+    </button>
+  `).join("");
+
+  container.querySelectorAll(".category-pill-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      container.querySelectorAll(".category-pill-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      AppState.selectedCategory = btn.dataset.category;
+      applyFilters();
+    });
+  });
+}// توليد النجوم التقييمية
+function generateStarsHtml(rating) {
+  let starsHtml = "";
+  const fullStars = Math.floor(rating);
+  const hasHalf = rating % 1 >= 0.5;
+
+  for (let i = 0; i < fullStars; i++) {
+    starsHtml += '<i class="fa-solid fa-star"></i>';
+  }
+  if (hasHalf) {
+    starsHtml += '<i class="fa-solid fa-star-half-stroke"></i>';
+  }
+  const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+  for (let i = 0; i < emptyStars; i++) {
+    starsHtml += '<i class="fa-regular fa-star"></i>';
+  }
+
+  return starsHtml;
+}
+
+// رسم بطاقة كتاب واحدة
+function createBookCardHtml(book) {
+  const isWish = window.cartManager ? window.cartManager.isInWishlist(book.id) : false;
+  const discountPercent = Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100);
+
+  return `
+    <div class="book-card" data-id="${book.id}">
+      <div class="book-cover-wrap" style="background: ${book.coverGradient}">
+        <div class="book-spine-effect"></div>
+        <span class="book-card-badge badge-${book.badgeType}">${book.badge}</span>
+        
+        <button type="button" 
+                class="wishlist-toggle-btn ${isWish ? 'active' : ''}" 
+                data-book-id="${book.id}" 
+                onclick="window.cartManager.toggleWishlist(${book.id})" 
+                title="إضافة للمفضلة">
+          <i class="${isWish ? 'fa-solid fa-heart text-rose-500' : 'fa-regular fa-heart'}"></i>
+        </button>
+
+        <i class="${book.icon} book-cover-icon"></i>
+        <h3 class="book-cover-title">${book.title}</h3>
+        <span class="book-cover-meta-tag">${book.pages} صفحة • ${book.year}</span>
+      </div>
+
+      <div class="book-card-content">
+        <span class="book-card-category">${book.categoryName}</span>
+        <h4 class="book-card-title">${book.title}</h4>
+        <div class="book-card-author">${book.author}</div>
+        
+        <div class="book-rating-row">
+          <div class="book-stars">${generateStarsHtml(book.rating)}</div>
+          <span class="rating-score">${book.rating}</span>
+          <span class="reviews-count">(${book.reviewsCount} تقييم)</span>
+        </div>
+
+        <p class="book-card-snippet">${book.shortDesc}</p>
+
+        <div class="book-card-footer">
+          <div class="book-price-line">
+            <div class="price-box">
+              <span class="current-price">${book.price} ${STORE_CONFIG.currency}</span>
+              <span class="original-price">${book.originalPrice} ${STORE_CONFIG.currency}</span>
+            </div>
+            <span class="discount-save-tag">وفر ${discountPercent}%</span>
+          </div>
+
+          <div class="book-action-buttons">
+            <button type="button" class="btn-add-cart" onclick="window.cartManager.addToCart(${book.id})">
+              <i class="fa-solid fa-cart-plus"></i>
+              <span>أضف للسلة</span>
+            </button>
+            <button type="button" class="btn-quick-preview" onclick="openQuickViewModal(${book.id})" title="معاينة الفهرس والمحتوى">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+            <button type="button" class="btn-direct-wa-item" onclick="openDirectWhatsApp(${book.id})" title="طلب فوري عبر واتساب">
+              <i class="fa-brands fa-whatsapp"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// تطبيق الفلاتر والفرز
+function applyFilters() {
+  const container = document.getElementById("books-grid-container");
+  const countEl = document.getElementById("results-count-text");
+  if (!container) return;
+
+  let filtered = [...BOOKS_DATA];
+
+  // 1. فلتر التصنيف
+  if (AppState.selectedCategory !== "all") {
+    filtered = filtered.filter(b => b.category === AppState.selectedCategory);
+  }
+
+  // 2. فلتر السعر الأقصى
+  filtered = filtered.filter(b => b.price <= AppState.maxPrice && b.price >= AppState.minPrice);
+
+  // 3. فلتر البحث النصي
+  if (AppState.searchQuery.trim() !== "") {
+    const q = AppState.searchQuery.trim().toLowerCase();
+    filtered = filtered.filter(b => 
+      b.title.toLowerCase().includes(q) ||
+      b.englishTitle.toLowerCase().includes(q) ||
+      b.author.toLowerCase().includes(q) ||
+      b.description.toLowerCase().includes(q) ||
+      b.categoryName.toLowerCase().includes(q)
+    );
+  }
+
+  // 4. الترتيب والفرز
+  if (AppState.sortBy === "popular") {
+    filtered.sort((a, b) => b.reviewsCount - a.reviewsCount);
+  } else if (AppState.sortBy === "price-asc") {
+    filtered.sort((a, b) => a.price - b.price);
+  } else if (AppState.sortBy === "price-desc") {
+    filtered.sort((a, b) => b.price - a.price);
+  } else if (AppState.sortBy === "rating") {
+    filtered.sort((a, b) => b.rating - a.rating);
+  } else if (AppState.sortBy === "newest") {
+    filtered.sort((a, b) => b.year - a.year);
+  }
+
+  // تحديث عداد النتائج
+  if (countEl) {
+    countEl.textContent = `عرض ${filtered.length} من أصل ${BOOKS_DATA.length} كتاب`;
+  }
+
+  // رسم النتائج في الصفحة
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-catalog-state">
+        <i class="fa-solid fa-book-bookmark"></i>
+        <h3>لم نعثر على كتب مطابقة لبحثك</h3>
+        <p>جرب تغيير شريط السعر، أو مسح نص البحث لاكتشاف جميع كتب الواجهات الأمامية.</p>
+        <button type="button" class="btn-primary-hero" onclick="resetAllFilters()">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span>إعادة ضبط الفلاتر</span>
+        </button>
+      </div>
+    `;
+  } else {
+    container.innerHTML = filtered.map(book => createBookCardHtml(book)).join("");
+  }
+}
+
+// إعادة ضبط جميع الفلاتر
+function resetAllFilters() {
+  AppState.selectedCategory = "all";
+  AppState.searchQuery = "";
+  AppState.maxPrice = 450;
+  AppState.sortBy = "popular";
+
+  const searchInputs = document.querySelectorAll(".search-input-field");
+  searchInputs.forEach(input => input.value = "");
+
+  const priceSlider = document.getElementById("price-filter-slider");
+  const priceDisplay = document.getElementById("price-filter-display");
+  if (priceSlider) priceSlider.value = 450;
+  if (priceDisplay) priceDisplay.textContent = `450 ${STORE_CONFIG.currency}`;
+
+  const sortSelect = document.getElementById("sort-select");
+  if (sortSelect) sortSelect.value = "popular";
+
+  const pills = document.querySelectorAll(".category-pill-btn");
+  pills.forEach(p => {
+    if (p.dataset.category === "all") p.classList.add("active");
+    else p.classList.remove("active");
+  });
+
+  applyFilters();
+  window.showToast("تمت إعادة ضبط جميع الفلاتر", "info");
+}// فتح المعاينة السريعة للكتاب
+function openQuickViewModal(bookId) {
+  const book = BOOKS_DATA.find(b => b.id === Number(bookId));
+  if (!book) return;
+
+  const modalOverlay = document.getElementById("quick-view-modal");
+  const modalBody = document.getElementById("quick-view-modal-content");
+  if (!modalOverlay || !modalBody) return;
+
+  const isWish = window.cartManager ? window.cartManager.isInWishlist(book.id) : false;
+  const discountPercent = Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100);
+
+  modalBody.innerHTML = `
+    <div class="quick-view-grid">
+      <div class="qv-cover-side">
+        <div class="qv-cover-showcase" style="background: ${book.coverGradient}">
+          <i class="${book.icon}"></i>
+          <h3 style="font-size: 1.3rem; font-weight: 800;">${book.title}</h3>
+          <span style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;">${book.englishTitle}</span>
+        </div>
+
+        <div class="qv-specs-grid">
+          <div class="qv-spec-item">
+            <strong>عدد الصفحات</strong>
+            <span>${book.pages} صفحة</span>
+          </div>
+          <div class="qv-spec-item">
+            <strong>سنة الإصدار</strong>
+            <span>${book.year} (محدث)</span>
+          </div>
+          <div class="qv-spec-item">
+            <strong>المستوى</strong>
+            <span>${book.level}</span>
+          </div>
+          <div class="qv-spec-item">
+            <strong>لغة الكتاب</strong>
+            <span>عربي + إنجليزي</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="qv-details-wrap">
+        <span class="qv-tag">${book.categoryName} • ${book.badge}</span>
+        <h2 class="qv-title">${book.title}</h2>
+        <div class="qv-author">المؤلف: ${book.author}</div>
+
+        <div class="book-rating-row" style="margin-bottom: 1rem;">
+          <div class="book-stars">${generateStarsHtml(book.rating)}</div>
+          <span class="rating-score">${book.rating}</span>
+          <span class="reviews-count">(${book.reviewsCount} مراجعة موثقة)</span>
+        </div>
+
+        <div class="qv-price-block">
+          <span class="qv-price-current">${book.price} ${STORE_CONFIG.currency}</span>
+          <span class="qv-price-old">${book.originalPrice} ${STORE_CONFIG.currency}</span>
+          <span class="discount-save-tag">خصم ${discountPercent}%</span>
+        </div>
+
+        <p class="qv-desc">${book.description}</p>
+
+        <div class="qv-toc-box">
+          <h5><i class="fa-solid fa-list-check text-indigo-400"></i> مقتطفات من فهرس الكتاب:</h5>
+          <ul class="qv-toc-list">
+            ${book.tableOfContents.map(ch => `<li><i class="fa-regular fa-circle-check text-emerald-400"></i> ${ch}</li>`).join("")}
+          </ul>
+        </div>
+
+        <div class="qv-actions-row">
+          <button type="button" class="btn-primary-hero" style="flex: 1; justify-content: center;" onclick="window.cartManager.addToCart(${book.id}); closeQuickViewModal();">
+            <i class="fa-solid fa-cart-plus"></i>
+            <span>إضافة إلى السلة (${book.price} ${STORE_CONFIG.currency})</span>
+          </button>
+          <button type="button" class="btn-wa-hero" onclick="openDirectWhatsApp(${book.id})">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span>طلب فوري</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  modalOverlay.classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeQuickViewModal() {
+  const modal = document.getElementById("quick-view-modal");
+  if (modal) modal.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+// طلب كتاب فوري عبر واتساب
+function openDirectWhatsApp(bookId) {
+  const url = window.cartManager.buildSingleBookWhatsAppUrl(bookId);
+  window.open(url, "_blank");
+}
+
+// فتح نموذج إتمام الطلب الفوري
+function openCheckoutModal() {
+  const modal = document.getElementById("checkout-modal");
+  if (modal) {
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+  }
+}
+
+function closeCheckoutModal() {
+  const modal = document.getElementById("checkout-modal");
+  if (modal) modal.classList.remove("open");
+  document.body.style.overflow = "";
+}
+
+// طلب الباقة الخاصة عبر واتساب
+function orderSpecialBundle() {
+  const text = `مرحباً مكتبة تَعلّم 📚\nأود الاستفادة من *عرض باقة احتراف الواجهات الأمامية (3 كتب بخصم 25%)* بسعر 690 ج.م بدلاً من 920 ج.م مع الشحن المجاني 🚀\nيرجى تأكيد تفاصيل الشحن. شكراً!`;
+  const url = `https://wa.me/${STORE_CONFIG.whatsappInternational}?text=${encodeURIComponent(text)}`;
+  window.open(url, "_blank");
+}
+
+// تبديل ظهور وإخفاء سلة المشتريات
+function toggleCartDrawer(open) {
+  const drawer = document.getElementById("cart-drawer-overlay");
+  if (!drawer) return;
+
+  if (open) {
+    drawer.classList.add("open");
+    document.body.style.overflow = "hidden";
+    if (window.cartManager) window.cartManager.renderCartDrawer();
+  } else {
+    drawer.classList.remove("open");
+    document.body.style.overflow = "";
+  }
+}
+
+// تهيئة جميع مستمعي الأحداث عند تحميل المستند
+document.addEventListener("DOMContentLoaded", () => {
+  // 1. الثيم والتصنيفات
+  initTheme();
+  renderCategoryPills();
+  applyFilters();
+
+  // 2. مستمع شريط السعر
+  const priceSlider = document.getElementById("price-filter-slider");
+  const priceDisplay = document.getElementById("price-filter-display");
+  if (priceSlider && priceDisplay) {
+    priceSlider.addEventListener("input", (e) => {
+      AppState.maxPrice = Number(e.target.value);
+      priceDisplay.textContent = `${AppState.maxPrice} ${STORE_CONFIG.currency}`;
+      applyFilters();
+    });
+  }
+
+  // 3. مستمع حقل الترتيب والفرز
+  const sortSelect = document.getElementById("sort-select");
+  if (sortSelect) {
+    sortSelect.addEventListener("change", (e) => {
+      AppState.sortBy = e.target.value;
+      applyFilters();
+    });
+  }
+
+  // 4. مستمع حقول البحث في الهيدر
+  const searchInputs = document.querySelectorAll(".search-input-field");
+  searchInputs.forEach(input => {
+    input.addEventListener("input", (e) => {
+      AppState.searchQuery = e.target.value;
+      
+      const clearBtn = input.parentElement.querySelector(".search-clear-btn");
+      if (clearBtn) {
+        clearBtn.style.display = AppState.searchQuery.length > 0 ? "block" : "none";
+      }
+
+      applyFilters();
+    });
+  });
+
+  const clearButtons = document.querySelectorAll(".search-clear-btn");
+  clearButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      searchInputs.forEach(input => input.value = "");
+      AppState.searchQuery = "";
+      btn.style.display = "none";
+      applyFilters();
+    });
+  });
+
+  // 5. زر سلة المشتريات
+  const cartBtn = document.getElementById("header-cart-btn");
+  if (cartBtn) {
+    cartBtn.addEventListener("click", () => toggleCartDrawer(true));
+  }
+  const mobileCartBtn = document.getElementById("mobile-cart-btn");
+  if (mobileCartBtn) {
+    mobileCartBtn.addEventListener("click", () => toggleCartDrawer(true));
+  }
+
+  const closeCartBtn = document.getElementById("cart-drawer-close-btn");
+  if (closeCartBtn) {
+    closeCartBtn.addEventListener("click", () => toggleCartDrawer(false));
+  }
+
+  // إغلاق السلة عند النقر على الخلفية
+  const cartOverlay = document.getElementById("cart-drawer-overlay");
+  if (cartOverlay) {
+    cartOverlay.addEventListener("click", (e) => {
+      if (e.target === cartOverlay) toggleCartDrawer(false);
+    });
+  }
+
+  // 6. زر إرسال الطلب بالواتساب مباشرة من السلة
+  const waCartBtn = document.getElementById("cart-wa-checkout-btn");
+  if (waCartBtn) {
+    waCartBtn.addEventListener("click", () => {
+      const url = window.cartManager.buildWhatsAppMessage();
+      window.open(url, "_blank");
+    });
+  }
+
+  // 7. نموذج إنهاء الطلب الشامل
+  const checkoutForm = document.getElementById("direct-checkout-form");
+  if (checkoutForm) {
+    checkoutForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const customerData = {
+        name: document.getElementById("checkout-name")?.value || "",
+        phone: document.getElementById("checkout-phone")?.value || "",
+        city: document.getElementById("checkout-city")?.value || "",
+        address: document.getElementById("checkout-address")?.value || "",
+        paymentMethod: document.getElementById("checkout-payment")?.value || "الدفع عند الاستلام",
+        notes: document.getElementById("checkout-notes")?.value || ""
+      };
+
+      if (!customerData.name || !customerData.phone || !customerData.address) {
+        window.showToast("يرجى ملء كافة الحقول الأساسية", "warning");
+        return;
+      }
+
+      const url = window.cartManager.buildWhatsAppMessage(customerData);
+      closeCheckoutModal();
+      toggleCartDrawer(false);
+      window.showToast("جاري تحويلك إلى واتساب لتأكيد الطلب الفوري 🚀", "success");
+      
+      setTimeout(() => {
+        window.open(url, "_blank");
+      }, 500);
+    });
+  }
+
+  // 8. الأكورديون للأسئلة الشائعة
+  const faqItems = document.querySelectorAll(".faq-item");
+  faqItems.forEach(item => {
+    const btn = item.querySelector(".faq-question-btn");
+    if (btn) {
+      btn.addEventListener("click", () => {
+        const isActive = item.classList.contains("active");
+        faqItems.forEach(i => i.classList.remove("active"));
+        if (!isActive) item.classList.add("active");
+      });
+    }
+  });
+
+  // 9. القائمة المنبثقة للأجهزة المحمولة
+  const mobileMenuBtn = document.getElementById("mobile-menu-trigger");
+  const mobileSearchBox = document.getElementById("mobile-search-section");
+  if (mobileMenuBtn && mobileSearchBox) {
+    mobileMenuBtn.addEventListener("click", () => {
+      mobileSearchBox.style.display = mobileSearchBox.style.display === "block" ? "none" : "block";
+    });
+  }
+});
